@@ -20,5 +20,5 @@ def hybrid_beautify(question: str) -> str:
     return llm_beautify(rule_processed)
 
 
-q = "  python json咋办  "
+q = "  我想用python那个json怎么弄才好还有能不能快点，因为我昨天试过那个但是不行，也可能有错  "
 print(hybrid_beautify(q))
