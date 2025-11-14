@@ -1,0 +1,9 @@
+# Gemini SDK for LLM and Embedding
+google-genai
+
+# Milvus Client for database operations
+pymilvus
+milvus-client
+
+# For loading the .env file safely
+python-dotenv
