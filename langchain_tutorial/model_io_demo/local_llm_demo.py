@@ -82,7 +82,7 @@ def parameters_configuration_demo():
     # 配置不同参数的模型实例
     
     # 参数说明:
-    # - model: 使用的模型名称
+    # - schemas: 使用的模型名称
     # - temperature: 控制响应的随机性 (0.0-2.0，越低越确定，越高越有创意)
     # - max_tokens: 限制生成的最大token数
     # - top_p: 控制token采样的累积概率，较低值会使输出更集中

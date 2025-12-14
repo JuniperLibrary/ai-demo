@@ -103,7 +103,7 @@ print("\n步骤1: 配置环境变量（OpenAI API密钥和基础URL）")
 # 确保环境变量已正确设置
 # 这里重新设置是为了演示完整性，并提供默认值以增强代码健壮性
 os.environ["OPENAI_API_KEY"] = os.getenv("OPENAI_API_KEY")
-os.environ["OPENAI_BASE_URL"] = os.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")  # 提供默认值
+os.environ["OPENAI_BASE_URL"] = o s.getenv("OPENAI_BASE_URL", "https://api.openai.com/v1")  # 提供默认值
 
 # 步骤2: 创建提示词模板（最推荐的from_template方式）
 print("步骤2: 创建提示词模板（使用from_template）")
@@ -130,7 +130,7 @@ print("步骤4: 初始化大模型（配置参数）")
 
 # 【推荐写法】明确指定模型参数，提高代码可读性和可维护性
 # 参数说明:
-# - model: 指定使用的模型，如gpt-4o-mini, gpt-4o, gpt-3.5-turbo等
+# - schemas: 指定使用的模型，如gpt-4o-mini, gpt-4o, gpt-3.5-turbo等
 # - max_tokens: 限制生成的最大token数，控制响应长度
 # - temperature: 控制生成内容的随机性（0-2，值越低越确定，值越高越有创意）
 # - base_url: 模型API的基础URL，便于切换不同的服务提供商或代理

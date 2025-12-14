@@ -1,0 +1,898 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>数据库AI助手</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.8/dist/chart.umd.min.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#3B82F6',
+                        secondary: '#10B981',
+                        accent: '#8B5CF6',
+                        dark: {
+                            bg: '#111827',
+                            card: '#1F2937'
+                        }
+                    },
+                    fontFamily: {
+                        sans: ['Inter', 'system-ui', 'sans-serif'],
+                    },
+                    animation: {
+                        'pulse-slow': 'pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                    }
+                },
+            }
+        }
+    </script>
+    <style type="text/tailwindcss">
+        @layer utilities {
+            .content-auto {
+                content-visibility: auto;
+            }
+            .scrollbar-hide {
+                -ms-overflow-style: none;
+                scrollbar-width: none;
+            }
+            .scrollbar-hide::-webkit-scrollbar {
+                display: none;
+            }
+            .text-shadow {
+                text-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            }
+            .transition-all-300 {
+                transition: all 0.3s ease;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-50 dark:bg-dark-bg min-h-screen flex flex-col">
+    <!-- 头部导航 -->
+    <header class="bg-white dark:bg-dark-card shadow-md z-10">
+        <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+            <div class="flex items-center space-x-2">
+                <i class="fa fa-database text-2xl text-primary"></i>
+                <h1 class="text-xl font-bold text-gray-800 dark:text-white">数据库AI助手</h1>
+            </div>
+            <div class="flex items-center space-x-4">
+                <div id="db-connection-status" class="text-sm text-gray-600 dark:text-gray-400">未连接数据库</div>
+                <button id="connect-db-button" class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded-lg flex items-center space-x-2 transition-all-300">
+                    <i class="fa fa-plug"></i>
+                    <span>连接数据库</span>
+                </button>
+                <button id="dark-mode-toggle" class="p-2 rounded-full hover:bg-gray-200 dark:hover:bg-gray-700 transition-all-300">
+                    <i class="fa fa-moon-o text-gray-600 dark:text-gray-300"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- 主要内容区域 -->
+    <main class="flex-1 container mx-auto px-4 py-6 flex flex-col lg:flex-row gap-6">
+        <!-- 侧边栏 -->
+        <aside class="w-full lg:w-1/4 bg-white dark:bg-dark-card rounded-xl shadow-md p-4 h-fit">
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fa fa-info-circle text-primary mr-2"></i>
+                    数据库信息
+                </h2>
+                <div id="db-info" class="text-sm text-gray-600 dark:text-gray-400">
+                    <p class="text-gray-500 dark:text-gray-500">请先连接数据库</p>
+                </div>
+            </div>
+            
+            <div class="mb-6">
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fa fa-table text-primary mr-2"></i>
+                    数据库操作
+                </h2>
+                <div class="space-y-3">
+                    <button id="show-tables-button" class="w-full bg-gray-100 dark:bg-gray-700 hover:bg-gray-200 dark:hover:bg-gray-600 text-gray-800 dark:text-white px-4 py-2 rounded-lg flex items-center justify-between transition-all-300">
+                        <span>查看表结构</span>
+                        <i class="fa fa-chevron-right text-gray-400"></i>
+                    </button>
+                    <button id="disconnect-db-button" class="w-full bg-red-100 hover:bg-red-200 text-red-800 px-4 py-2 rounded-lg flex items-center justify-between transition-all-300">
+                        <span>断开连接</span>
+                        <i class="fa fa-sign-out text-red-400"></i>
+                    </button>
+                </div>
+            </div>
+            
+            <div>
+                <h2 class="text-lg font-semibold text-gray-800 dark:text-white mb-4 flex items-center">
+                    <i class="fa fa-lightbulb-o text-primary mr-2"></i>
+                    推荐提示词
+                </h2>
+                <div class="space-y-2">
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all-300" onclick="usePrompt('显示所有用户的基本信息')">
+                        <p class="text-sm text-gray-800 dark:text-white">显示所有用户的基本信息</p>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all-300" onclick="usePrompt('查询最近一个月的销售数据')">
+                        <p class="text-sm text-gray-800 dark:text-white">查询最近一个月的销售数据</p>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all-300" onclick="usePrompt('统计各产品类别的销量')">
+                        <p class="text-sm text-gray-800 dark:text-white">统计各产品类别的销量</p>
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-700 p-3 rounded-lg cursor-pointer hover:bg-gray-200 dark:hover:bg-gray-600 transition-all-300" onclick="usePrompt('找出库存不足的产品')">
+                        <p class="text-sm text-gray-800 dark:text-white">找出库存不足的产品</p>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 聊天区域 -->
+        <section class="w-full lg:w-3/4 bg-white dark:bg-dark-card rounded-xl shadow-md flex flex-col">
+            <!-- 聊天消息容器 -->
+            <div id="message-container" class="flex-1 p-4 overflow-y-auto scrollbar-hide space-y-4">
+                <!-- 消息会动态添加到这里 -->
+            </div>
+
+            <!-- 输入区域 -->
+            <div class="p-4 border-t border-gray-200 dark:border-gray-700">
+                <div class="flex space-x-2">
+                    <input 
+                        id="user-input" 
+                        type="text" 
+                        placeholder="输入您的查询需求..." 
+                        class="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white"
+                    >
+                    <button 
+                        id="send-button" 
+                        class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg flex items-center justify-center transition-all-300"
+                    >
+                        <i class="fa fa-paper-plane"></i>
+                    </button>
+                </div>
+                <p class="text-xs text-gray-500 dark:text-gray-400 mt-2">提示：请使用自然语言描述您的查询需求，例如"显示所有用户的基本信息"</p>
+            </div>
+        </section>
+    </main>
+
+    <!-- 数据库连接模态框 -->
+    <div id="db-settings-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">连接数据库</h2>
+                <button id="close-db-settings-button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <form id="db-connection-form" class="p-6 space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">数据库类型</label>
+                    <select id="db-type" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white">
+                        <option value="mysql">MySQL</option>
+                        <option value="postgresql">PostgreSQL</option>
+                    </select>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">主机地址</label>
+                        <input type="text" id="db-host" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" placeholder="localhost" required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">端口</label>
+                        <input type="number" id="db-port" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" required>
+                    </div>
+                </div>
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">数据库名称</label>
+                    <input type="text" id="db-name" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" required>
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">用户名</label>
+                        <input type="text" id="db-username" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" required>
+                    </div>
+                    <div class="space-y-2">
+                        <label class="block text-sm font-medium text-gray-700 dark:text-gray-300">密码</label>
+                        <input type="password" id="db-password" class="w-full px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary dark:bg-gray-800 dark:text-white" required>
+                    </div>
+                </div>
+                <div id="db-connection-status" class="text-sm text-gray-600 dark:text-gray-400 mt-2"></div>
+                <div class="pt-4 flex justify-end">
+                    <button type="submit" class="bg-primary hover:bg-primary/90 text-white px-6 py-3 rounded-lg flex items-center space-x-2 transition-all-300">
+                        <i class="fa fa-plug"></i>
+                        <span>连接</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- 表信息模态框 -->
+    <div id="tables-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg w-full max-w-4xl max-h-[90vh] overflow-y-auto">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">数据库表结构</h2>
+                <button id="close-tables-button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div id="tables-container" class="p-6 space-y-6">
+                <!-- 表信息会动态添加到这里 -->
+            </div>
+        </div>
+    </div>
+
+    <!-- SQL执行确认模态框 -->
+    <div id="sql-confirm-modal" class="fixed inset-0 bg-black/50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white dark:bg-dark-card rounded-xl shadow-lg w-full max-w-3xl">
+            <div class="p-6 border-b border-gray-200 dark:border-gray-700 flex justify-between items-center">
+                <h2 class="text-xl font-bold text-gray-800 dark:text-white">SQL查询确认</h2>
+                <button id="close-sql-confirm-button" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="p-6">
+                <p class="text-sm text-gray-600 dark:text-gray-400 mb-4">请确认以下SQL查询语句是否正确：</p>
+                <pre class="bg-gray-100 dark:bg-gray-800 p-4 rounded-lg overflow-x-auto text-sm font-mono text-gray-800 dark:text-gray-300 mb-6" id="generated-sql"></pre>
+                <div class="flex justify-end space-x-4">
+                    <button id="close-sql-confirm-button" class="border border-gray-300 dark:border-gray-600 text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-gray-700 px-6 py-2 rounded-lg transition-all-300">
+                        取消
+                    </button>
+                    <button id="execute-sql-button" class="bg-secondary hover:bg-secondary/90 text-white px-6 py-2 rounded-lg transition-all-300">
+                        执行查询
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 后端API地址
+        const API_BASE_URL = 'http://localhost:5000';
+        
+        // 数据库连接信息
+        let databaseConnection = null;
+        
+        // DOM元素
+        const messageContainer = document.getElementById('message-container');
+        const userInput = document.getElementById('user-input');
+        const sendButton = document.getElementById('send-button');
+        const connectDbButton = document.getElementById('connect-db-button');
+        const dbSettingsModal = document.getElementById('db-settings-modal');
+        const closeDbSettingsButton = document.getElementById('close-db-settings-button');
+        const dbConnectionForm = document.getElementById('db-connection-form');
+        const dbConnectionStatus = document.getElementById('db-connection-status');
+        const showTablesButton = document.getElementById('show-tables-button');
+        const tablesModal = document.getElementById('tables-modal');
+        const closeTablesButton = document.getElementById('close-tables-button');
+        const tablesContainer = document.getElementById('tables-container');
+        const sqlConfirmModal = document.getElementById('sql-confirm-modal');
+        const closeSqlConfirmButtons = document.querySelectorAll('#close-sql-confirm-button');
+        const executeSqlButton = document.getElementById('execute-sql-button');
+        const generatedSqlText = document.getElementById('generated-sql');
+        const disconnectDbButton = document.getElementById('disconnect-db-button');
+        const dbInfo = document.getElementById('db-info');
+        const darkModeToggle = document.getElementById('dark-mode-toggle');
+        
+        // 当前生成的SQL
+        let currentSql = null;
+        
+        // 事件监听器
+        sendButton.addEventListener('click', handleSendMessage);
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') handleSendMessage();
+        });
+        
+        connectDbButton.addEventListener('click', () => {
+            dbSettingsModal.classList.remove('hidden');
+        });
+        
+        closeDbSettingsButton.addEventListener('click', () => {
+            dbSettingsModal.classList.add('hidden');
+        });
+        
+        dbConnectionForm.addEventListener('submit', handleDbConnection);
+        
+        showTablesButton.addEventListener('click', showDatabaseTables);
+        
+        closeTablesButton.addEventListener('click', () => {
+            tablesModal.classList.add('hidden');
+        });
+        
+        closeSqlConfirmButtons.forEach(button => {
+            button.addEventListener('click', () => {
+                sqlConfirmModal.classList.add('hidden');
+            });
+        });
+        
+        executeSqlButton.addEventListener('click', executeSqlQuery);
+        
+        disconnectDbButton.addEventListener('click', disconnectDatabase);
+        
+        darkModeToggle.addEventListener('click', toggleDarkMode);
+        
+        // 根据数据库类型设置默认端口
+        document.getElementById('db-type').addEventListener('change', (e) => {
+            const portInput = document.getElementById('db-port');
+            if (e.target.value === 'mysql') {
+                portInput.value = '3306';
+            } else if (e.target.value === 'postgresql') {
+                portInput.value = '5432';
+            }
+        });
+        
+        // 初始设置默认端口
+        document.getElementById('db-port').value = '3306';
+        
+        // 处理发送消息
+        async function handleSendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+            
+            // 添加用户消息到聊天界面
+            addMessage('user', message);
+            userInput.value = '';
+            
+            // 检查是否已连接数据库
+            if (!databaseConnection) {
+                addMessage('assistant', '请先连接数据库再提问。');
+                return;
+            }
+            
+            // 显示思考中
+            addMessage('assistant', '思考中...', 'thinking');
+            
+            try {
+                // 生成SQL查询
+                const response = await fetch(`${API_BASE_URL}/api/generate-sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        connection_id: databaseConnection.connection_id,
+                        query: message
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    currentSql = result.sql;
+                    generatedSqlText.textContent = currentSql;
+                    sqlConfirmModal.classList.remove('hidden');
+                    
+                    // 移除思考中消息
+                    removeThinkingMessage();
+                    addMessage('assistant', `已为您生成SQL查询语句。请确认是否执行。`);
+                } else {
+                    removeThinkingMessage();
+                    addMessage('assistant', `生成SQL失败: ${result.error}`);
+                }
+            } catch (error) {
+                removeThinkingMessage();
+                addMessage('assistant', `发生错误: ${error.message}`);
+            }
+        }
+        
+        // 处理数据库连接
+        async function handleDbConnection(e) {
+            e.preventDefault();
+            
+            const dbType = document.getElementById('db-type').value;
+            const host = document.getElementById('db-host').value;
+            const port = document.getElementById('db-port').value;
+            const database = document.getElementById('db-name').value;
+            const username = document.getElementById('db-username').value;
+            const password = document.getElementById('db-password').value;
+            
+            // 显示加载状态
+            dbConnectionStatus.textContent = '连接中...';
+            
+            try {
+                // 首先测试连接
+                const testResponse = await fetch(`${API_BASE_URL}/api/test-connection`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: dbType,
+                        host: host,
+                        port: port,
+                        database: database,
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const testResult = await testResponse.json();
+                
+                if (!testResult.success) {
+                    dbConnectionStatus.textContent = `连接测试失败: ${testResult.error}`;
+                    dbConnectionStatus.classList.remove('text-green-500');
+                    dbConnectionStatus.classList.add('text-red-500');
+                    return;
+                }
+                
+                // 测试成功后建立正式连接
+                const response = await fetch(`${API_BASE_URL}/api/connect-db`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        type: dbType,
+                        host: host,
+                        port: port,
+                        database: database,
+                        username: username,
+                        password: password
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    databaseConnection = result;
+                    dbConnectionStatus.textContent = `已连接: ${dbType} - ${database}`;
+                    dbConnectionStatus.classList.remove('text-red-500');
+                    dbConnectionStatus.classList.add('text-green-500');
+                    
+                    // 更新数据库信息显示
+                    dbInfo.innerHTML = `
+                        <div class="space-y-2">
+                            <p><strong>类型:</strong> ${dbType}</p>
+                            <p><strong>主机:</strong> ${host}:${port}</p>
+                            <p><strong>数据库:</strong> ${database}</p>
+                            <p><strong>用户名:</strong> ${username}</p>
+                        </div>
+                    `;
+                    
+                    dbSettingsModal.classList.add('hidden');
+                    addMessage('assistant', `成功连接到${dbType}数据库: ${database}`);
+                } else {
+                    dbConnectionStatus.textContent = `连接失败: ${result.error}`;
+                    dbConnectionStatus.classList.remove('text-green-500');
+                    dbConnectionStatus.classList.add('text-red-500');
+                }
+            } catch (error) {
+                dbConnectionStatus.textContent = `错误: ${error.message}`;
+                dbConnectionStatus.classList.remove('text-green-500');
+                dbConnectionStatus.classList.add('text-red-500');
+            }
+        }
+        
+        // 显示数据库表
+        async function showDatabaseTables() {
+            if (!databaseConnection) {
+                addMessage('assistant', '请先连接数据库。');
+                return;
+            }
+            
+            try {
+                // 显示加载状态
+                tablesContainer.innerHTML = '<div class="text-center py-10"><i class="fa fa-spinner fa-spin text-2xl text-primary"></i></div>';
+                tablesModal.classList.remove('hidden');
+                
+                const response = await fetch(`${API_BASE_URL}/api/get-tables`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        connection_id: databaseConnection.connection_id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 清空表容器
+                    tablesContainer.innerHTML = '';
+                    
+                    if (result.tables.length === 0) {
+                        tablesContainer.innerHTML = '<p class="text-gray-500 dark:text-gray-400 text-center py-10">没有找到表</p>';
+                    } else {
+                        // 创建表列表
+                        const tablesList = document.createElement('div');
+                        tablesList.className = 'space-y-6';
+                        
+                        result.tables.forEach(table => {
+                            const tableCard = document.createElement('div');
+                            tableCard.className = 'bg-white dark:bg-gray-800 rounded-lg shadow p-5 border border-gray-200 dark:border-gray-700';
+                            
+                            const tableName = document.createElement('h3');
+                            tableName.className = 'text-xl font-semibold text-gray-800 dark:text-white mb-4 pb-2 border-b border-gray-200 dark:border-gray-700';
+                            tableName.textContent = table.name;
+                            
+                            const columnsList = document.createElement('div');
+                            columnsList.className = 'text-sm';
+                            
+                            // 创建字段表格
+                            const columnsTable = document.createElement('table');
+                            columnsTable.className = 'min-w-full';
+                            
+                            const columnsHeader = document.createElement('tr');
+                            columnsHeader.className = 'border-b border-gray-200 dark:border-gray-700';
+                            
+                            const headerCell = document.createElement('th');
+                            headerCell.className = 'py-2 px-4 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider';
+                            headerCell.textContent = '字段名称';
+                            columnsHeader.appendChild(headerCell);
+                            
+                            columnsTable.appendChild(columnsHeader);
+                            
+                            const columnsBody = document.createElement('tbody');
+                            
+                            table.columns.forEach(col => {
+                                const columnRow = document.createElement('tr');
+                                columnRow.className = 'hover:bg-gray-50 dark:hover:bg-gray-700/50';
+                                
+                                const columnCell = document.createElement('td');
+                                columnCell.className = 'py-3 px-4 text-sm text-gray-600 dark:text-gray-300';
+                                columnCell.textContent = col;
+                                columnRow.appendChild(columnCell);
+                                
+                                columnsBody.appendChild(columnRow);
+                            });
+                            
+                            columnsTable.appendChild(columnsBody);
+                            columnsList.appendChild(columnsTable);
+                            
+                            tableCard.appendChild(tableName);
+                            tableCard.appendChild(columnsList);
+                            tablesList.appendChild(tableCard);
+                        });
+                        
+                        tablesContainer.appendChild(tablesList);
+                    }
+                } else {
+                    tablesContainer.innerHTML = `<p class="text-red-500 text-center py-10">获取表信息失败: ${result.error}</p>`;
+                }
+            } catch (error) {
+                tablesContainer.innerHTML = `<p class="text-red-500 text-center py-10">发生错误: ${error.message}</p>`;
+            }
+        }
+        
+        // 执行SQL查询
+        async function executeSqlQuery() {
+            if (!currentSql || !databaseConnection) return;
+            
+            sqlConfirmModal.classList.add('hidden');
+            addMessage('assistant', '正在执行查询...', 'executing');
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/execute-sql`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        connection_id: databaseConnection.connection_id,
+                        sql: currentSql
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    // 移除执行中消息
+                    removeExecutingMessage();
+                    
+                    // 显示查询结果
+                    displayQueryResults(result.results);
+                } else {
+                    removeExecutingMessage();
+                    addMessage('assistant', `查询执行失败: ${result.error}`);
+                }
+            } catch (error) {
+                removeExecutingMessage();
+                addMessage('assistant', `发生错误: ${error.message}`);
+            }
+        }
+        
+        // 断开数据库连接
+        async function disconnectDatabase() {
+            if (!databaseConnection) {
+                addMessage('assistant', '未连接数据库。');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`${API_BASE_URL}/api/disconnect-db`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        connection_id: databaseConnection.connection_id
+                    })
+                });
+                
+                const result = await response.json();
+                
+                if (result.success) {
+                    databaseConnection = null;
+                    dbInfo.innerHTML = '<p class="text-gray-500 dark:text-gray-500">请先连接数据库</p>';
+                    document.querySelector('#db-connection-status').textContent = '未连接数据库';
+                    document.querySelector('#db-connection-status').className = 'text-sm text-gray-600 dark:text-gray-400';
+                    addMessage('assistant', '数据库连接已断开');
+                } else {
+                    addMessage('assistant', `断开连接失败: ${result.error}`);
+                }
+            } catch (error) {
+                addMessage('assistant', `发生错误: ${error.message}`);
+            }
+        }
+        
+        // 显示查询结果
+        function displayQueryResults(results) {
+            // 创建结果容器
+            const resultContainer = document.createElement('div');
+            resultContainer.className = 'mt-4 bg-gray-50 dark:bg-gray-800 p-5 rounded-lg overflow-auto max-h-[500px] border border-gray-200 dark:border-gray-700';
+            
+            // 结果统计信息
+            const statsDiv = document.createElement('div');
+            statsDiv.className = 'mb-4 text-sm font-medium text-gray-600 dark:text-gray-400';
+            statsDiv.textContent = `查询结果: ${results.rows.length} 行`;
+            resultContainer.appendChild(statsDiv);
+            
+            if (results.rows.length > 0) {
+                // 创建表格
+                const table = document.createElement('table');
+                table.className = 'min-w-full divide-y divide-gray-200 dark:divide-gray-700';
+                
+                // 创建表头
+                const thead = document.createElement('thead');
+                thead.className = 'bg-gray-100 dark:bg-gray-700';
+                
+                const headerRow = document.createElement('tr');
+                results.columns.forEach(col => {
+                    const th = document.createElement('th');
+                    th.className = 'px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-300 uppercase tracking-wider whitespace-nowrap';
+                    th.textContent = col;
+                    headerRow.appendChild(th);
+                });
+                
+                thead.appendChild(headerRow);
+                table.appendChild(thead);
+                
+                // 创建表体
+                const tbody = document.createElement('tbody');
+                tbody.className = 'bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700';
+                
+                results.rows.forEach((row, index) => {
+                    const tr = document.createElement('tr');
+                    tr.className = index % 2 === 0 ? 'bg-white dark:bg-gray-800' : 'bg-gray-50 dark:bg-gray-750';
+                    tr.className += ' hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors';
+                    
+                    row.forEach(cell => {
+                        const td = document.createElement('td');
+                        td.className = 'px-4 py-3 text-sm text-gray-600 dark:text-gray-300 whitespace-nowrap';
+                        td.textContent = cell !== null ? cell : 'NULL';
+                        tr.appendChild(td);
+                    });
+                    tbody.appendChild(tr);
+                });
+                
+                table.appendChild(tbody);
+                resultContainer.appendChild(table);
+                
+                // 如果数据量不太大，尝试创建图表
+                if (results.rows.length <= 100) {
+                    try {
+                        createVisualization(results, resultContainer);
+                    } catch (e) {
+                        console.error('创建可视化失败:', e);
+                    }
+                }
+            } else {
+                const noDataMsg = document.createElement('p');
+                noDataMsg.className = 'text-gray-500 dark:text-gray-400 text-center py-10';
+                noDataMsg.textContent = '没有找到数据';
+                resultContainer.appendChild(noDataMsg);
+            }
+            
+            addMessage('assistant', `SQL查询执行成功`, resultContainer);
+        }
+        
+        // 创建数据可视化
+        function createVisualization(results, container) {
+            // 检查是否有数值列和分类列可以用来创建图表
+            const numericColumns = [];
+            const stringColumns = [];
+            
+            // 简单检查列类型
+            for (let i = 0; i < results.columns.length; i++) {
+                // 检查前10个非null值
+                let isNumeric = true;
+                let checkCount = 0;
+                
+                for (let j = 0; j < Math.min(results.rows.length, 10); j++) {
+                    const cell = results.rows[j][i];
+                    if (cell !== null && cell !== '' && isNaN(parseFloat(cell))) {
+                        isNumeric = false;
+                        break;
+                    }
+                    if (cell !== null && cell !== '') {
+                        checkCount++;
+                    }
+                }
+                
+                // 如果至少有一个非null值且都是数值，则认为是数值列
+                if (isNumeric && checkCount > 0) {
+                    numericColumns.push(i);
+                } else {
+                    stringColumns.push(i);
+                }
+            }
+            
+            // 如果有数值列和分类列，尝试创建柱状图
+            if (numericColumns.length > 0 && stringColumns.length > 0) {
+                // 创建图表容器
+                const chartContainer = document.createElement('div');
+                chartContainer.className = 'mt-8 p-4 bg-white dark:bg-gray-750 rounded-lg border border-gray-200 dark:border-gray-700';
+                
+                const chartTitle = document.createElement('h4');
+                chartTitle.className = 'text-sm font-medium text-gray-700 dark:text-gray-300 mb-4';
+                chartTitle.textContent = '数据可视化';
+                
+                const canvas = document.createElement('canvas');
+                canvas.id = `chart-${Date.now()}`;
+                canvas.className = 'w-full h-64';
+                
+                chartContainer.appendChild(chartTitle);
+                chartContainer.appendChild(canvas);
+                container.appendChild(chartContainer);
+                
+                // 提取数据
+                const categoryCol = stringColumns[0];
+                const valueCol = numericColumns[0];
+                
+                const labels = [];
+                const values = [];
+                
+                // 最多取前20个数据点
+                const maxDataPoints = Math.min(results.rows.length, 20);
+                
+                for (let i = 0; i < maxDataPoints; i++) {
+                    labels.push(results.rows[i][categoryCol] || 'N/A');
+                    values.push(parseFloat(results.rows[i][valueCol] || 0));
+                }
+                
+                // 使用Chart.js创建图表
+                new Chart(canvas, {
+                    type: 'bar',
+                    data: {
+                        labels: labels,
+                        datasets: [{
+                            label: results.columns[valueCol],
+                            data: values,
+                            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+                            borderColor: 'rgba(54, 162, 235, 1)',
+                            borderWidth: 1
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                position: 'top',
+                            }
+                        }
+                    }
+                });
+            }
+        }
+        
+        // 添加消息到聊天界面
+        function addMessage(role, content, messageType = 'text') {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `flex items-start space-x-4 p-4 rounded-lg shadow-sm transition-all duration-300 opacity-0 transform translate-y-2 ${role === 'user' ? 'bg-blue-50 dark:bg-blue-900/30 self-end' : 'bg-gray-50 dark:bg-gray-800 self-start'}`;
+            
+            // 添加头像
+            const avatarDiv = document.createElement('div');
+            avatarDiv.className = `${role === 'user' ? 'bg-blue-500' : 'bg-green-500'} w-8 h-8 rounded-full flex items-center justify-center text-white font-bold flex-shrink-0`;
+            avatarDiv.textContent = role === 'user' ? 'U' : 'A';
+            
+            // 添加消息内容
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'flex-grow';
+            
+            if (messageType === 'text') {
+                contentDiv.textContent = content;
+            } else if (messageType === 'thinking' || messageType === 'executing') {
+                contentDiv.innerHTML = `
+                    <div class="flex items-center space-x-2">
+                        <div class="animate-spin rounded-full h-4 w-4 border-t-2 border-b-2 border-gray-700"></div>
+                        <span>${content}</span>
+                    </div>
+                `;
+                messageDiv.dataset.messageType = messageType;
+            } else if (content instanceof HTMLElement) {
+                contentDiv.appendChild(content);
+            }
+            
+            messageDiv.appendChild(avatarDiv);
+            messageDiv.appendChild(contentDiv);
+            
+            // 将消息添加到容器
+            messageContainer.appendChild(messageDiv);
+            
+            // 添加消息动画
+            setTimeout(() => {
+                messageDiv.style.opacity = '1';
+                messageDiv.style.transform = 'translateY(0)';
+            }, 10);
+            
+            // 滚动到底部
+            messageContainer.scrollTop = messageContainer.scrollHeight;
+        }
+        
+        // 移除思考中消息
+        function removeThinkingMessage() {
+            const thinkingMessage = messageContainer.querySelector('[data-message-type="thinking"]');
+            if (thinkingMessage) {
+                thinkingMessage.style.opacity = '0';
+                setTimeout(() => {
+                    if (thinkingMessage.parentNode) {
+                        messageContainer.removeChild(thinkingMessage);
+                    }
+                }, 300);
+            }
+        }
+        
+        // 移除执行中消息
+        function removeExecutingMessage() {
+            const executingMessage = messageContainer.querySelector('[data-message-type="executing"]');
+            if (executingMessage) {
+                executingMessage.style.opacity = '0';
+                setTimeout(() => {
+                    if (executingMessage.parentNode) {
+                        messageContainer.removeChild(executingMessage);
+                    }
+                }, 300);
+            }
+        }
+        
+        // 使用推荐提示词
+        function usePrompt(prompt) {
+            userInput.value = prompt;
+            userInput.focus();
+        }
+        
+        // 切换暗黑模式
+        function toggleDarkMode() {
+            document.documentElement.classList.toggle('dark');
+            const icon = darkModeToggle.querySelector('i');
+            if (document.documentElement.classList.contains('dark')) {
+                icon.classList.remove('fa-moon-o');
+                icon.classList.add('fa-sun-o');
+            } else {
+                icon.classList.remove('fa-sun-o');
+                icon.classList.add('fa-moon-o');
+            }
+        }
+        
+        // 初始化页面
+        function init() {
+            // 添加欢迎消息
+            addMessage('assistant', '欢迎使用数据库AI助手！我可以帮助您连接MySQL或PostgreSQL数据库，并根据您的自然语言查询生成SQL语句。\n\n请先点击右上角的"连接数据库"按钮，填写数据库连接信息。');
+            
+            // 检查系统暗黑模式偏好
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                toggleDarkMode();
+            }
+        }
+        
+        // 页面加载完成后初始化
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
