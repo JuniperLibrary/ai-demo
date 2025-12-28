@@ -3,3 +3,4 @@
 .venv/
 __pycache__/
 *.pyc
+/langchain_tutorial/agents_demo/logs/
