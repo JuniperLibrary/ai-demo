@@ -4,3 +4,4 @@
 __pycache__/
 *.pyc
 /langchain_tutorial/agents_demo/logs/
+/langchain_tutorial/agents_demo/openai_agent/logs/
