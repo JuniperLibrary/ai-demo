@@ -2,7 +2,7 @@ import json
 from tavily import TavilyClient
 import os
 import dotenv
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 
 dotenv.load_dotenv()
 

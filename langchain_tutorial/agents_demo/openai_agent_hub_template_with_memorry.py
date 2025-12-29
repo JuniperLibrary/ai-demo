@@ -15,7 +15,7 @@ from langchain_community.chat_message_histories import ChatMessageHistory
 from langchain_core.runnables.history import RunnableWithMessageHistory
 
 # --- 1. 引入自定义日志模块 ---
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 
 # 初始化日志 (这一步通常放在最前面)
 # 你可以在这里自定义日志文件名，例如 'daily_agent.log'

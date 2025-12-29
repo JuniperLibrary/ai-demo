@@ -4,7 +4,7 @@ import os
 import dotenv
 dotenv.load_dotenv()
 
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 
 logger = get_logger("agent.openai_agent", log_file="logs/openai_agent.log", format_style="standard")
 

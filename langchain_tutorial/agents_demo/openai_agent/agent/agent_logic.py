@@ -7,7 +7,7 @@ from openai import OpenAI
 from sqlalchemy.orm import Session
 import dotenv
 
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 from langchain_tutorial.agents_demo.openai_agent.database import crud
 
 logger = get_logger("agent.openai_agent", log_file="../logs/openai_agent.log", format_style="standard")

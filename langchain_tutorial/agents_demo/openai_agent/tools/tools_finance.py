@@ -1,6 +1,6 @@
 import json
 
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 
 # 1. 定义具体的 Python 函数 (Mock 数据)
 

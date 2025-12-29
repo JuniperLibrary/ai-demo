@@ -1,9 +1,6 @@
-from core.shared.config import get_logger
+from core.shared.logging.config import get_logger
 from langchain_tutorial.agents_demo.openai_agent.agent.agent_logic import run_agent_engine
 from langchain_tutorial.agents_demo.openai_agent.database.connection import init_db, SessionLocal
-from langchain_tutorial.agents_demo.openai_agent.tools.search_tavily import tools_schema as search_schema, available_tools as search_map
-from langchain_tutorial.agents_demo.openai_agent.tools.tools_finance import finance_tools_map, finance_tools_schema
-from langchain_tutorial.agents_demo.openai_agent.tools.tools_requirements import req_tools_schema, req_tools_map
 
 logger = get_logger("agent.openai_agent", log_file="logs/openai_agent.log", format_style="standard")
 
