@@ -1,0 +1,41 @@
+version: 1
+disable_existing_loggers: false
+
+# 格式化器：定义日志长什么样
+formatters:
+  simple:
+    format: "%(asctime)s - %(levelname)s - %(message)s"
+  detailed:
+    format: "%(asctime)s - %(name)s - [%(levelname)s] - (%(filename)s:%(lineno)d) - %(message)s"
+
+# 处理器：定义日志去哪里
+handlers:
+  # 控制台处理器
+  console:
+    class: logging.StreamHandler
+    level: INFO
+    formatter: simple
+    stream: ext://sys.stdout
+
+  # 文件处理器 (按时间切割)
+  file:
+    class: logging.handlers.TimedRotatingFileHandler
+    level: DEBUG
+    formatter: detailed
+    filename: logs/app.log  # 日志文件名
+    when: "midnight"         # 每天午夜切割
+    interval: 1             # 每天一次
+    backupCount: 7          # 保留最近7天的日志
+    encoding: utf8
+
+# 记录器：代码中实际使用的对象
+loggers:
+  my_app: # 对应我们自己 app 的 logger
+    level: DEBUG
+    handlers: [console, file]
+    propagate: no # 防止日志向 root logger 传递
+
+# 根记录器：捕获所有未被明确指定的 logger 的日志
+root:
+  level: INFO
+  handlers: [console]
